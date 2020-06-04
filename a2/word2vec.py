@@ -3,6 +3,7 @@
 import numpy as np
 import random
 
+from numpy.core._multiarray_umath import ndarray
 from utils.gradcheck import gradcheck_naive, grad_tests_softmax, grad_tests_negsamp
 from utils.utils import normalizeRows, softmax
 
@@ -65,7 +66,7 @@ def naiveSoftmaxLossAndGradient(
     loss = -np.log(p)[outsideWordIdx]
 
     gradCenterVec = -np.transpose(outsideVectors[outsideWordIdx]) + np.matmul(np.transpose(outsideVectors), p)
-    gradOutsideVecs = np.matmul(p, centerWordVec)
+    gradOutsideVecs = np.matmul(p.reshape((-1, 1)), centerWordVec.reshape((1, -1)))
     gradOutsideVecs[outsideWordIdx] -= np.transpose(centerWordVec)
     ### END YOUR CODE
 
@@ -155,10 +156,21 @@ def skipgram(currentCenterWord, windowSize, outsideWords, word2Ind,
     """
 
     loss = 0.0
-    gradCenterVecs = np.zeros(centerWordVectors.shape)
+    gradCenterVecs: ndarray = np.zeros(centerWordVectors.shape)
     gradOutsideVectors = np.zeros(outsideVectors.shape)
 
     ### YOUR CODE HERE (~8 Lines)
+    centerWordVec = centerWordVectors[word2Ind[currentCenterWord], :]
+
+    for outsideWord in outsideWords:
+        outsideWordIdx = word2Ind[outsideWord]
+
+        loss_, gradCenterVec_, gradOutsideVectors_ = word2vecLossAndGradient(
+            centerWordVec, outsideWordIdx, outsideVectors, dataset)
+
+        loss += loss_
+        gradCenterVecs[[word2Ind[currentCenterWord]], :] += gradCenterVec_.reshape((1, -1))
+        gradOutsideVectors += gradOutsideVectors_
 
     ### END YOUR CODE
     
