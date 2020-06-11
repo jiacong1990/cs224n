@@ -114,7 +114,19 @@ def minibatch_parse(sentences, model, batch_size):
     ###             contains references to the same objects. Thus, you should NOT use the `del` operator
     ###             to remove objects from the `unfinished_parses` list. This will free the underlying memory that
     ###             is being accessed by `partial_parses` and may cause your code to crash.
+    dependencies = [None for _ in sentences]
 
+    partial_parses = [(i, PartialParse(s)) for i, s in enumerate(sentences)]
+    unfinished_parses = partial_parses
+    while unfinished_parses:
+        index_batch = [i for i, _ in unfinished_parses[:batch_size]]
+        ps_batch = [ps for _, ps in unfinished_parses[:batch_size]]
+        transitions = model.predict(ps_batch)
+        for transition, ps, i in zip(transitions, ps_batch, index_batch):
+            ps.parse_step(transition)
+            if not ps.buffer and len(ps.stack) == 1:
+                dependencies[i] = ps.dependencies
+                unfinished_parses.remove((i, ps))
 
     ### END YOUR CODE
 
