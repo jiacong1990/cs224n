@@ -111,8 +111,10 @@ class ParserModel(nn.Module):
         ###     Index select: https://pytorch.org/docs/stable/torch.html#torch.index_select
         ###     Gather: https://pytorch.org/docs/stable/torch.html#torch.gather
         ###     View: https://pytorch.org/docs/stable/tensors.html#torch.Tensor.view
+        x = torch.empty(w.shape[0], self.n_features * self.embed_size)
 
-
+        for i in range(w.shape[0]):
+            x[i] = torch.index_select(self.embeddings, 0, w[i]).view(1, -1)
 
         ### END YOUR CODE
         return x
