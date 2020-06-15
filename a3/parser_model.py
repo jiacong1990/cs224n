@@ -71,14 +71,14 @@ class ParserModel(nn.Module):
         ###     Initialization: https://pytorch.org/docs/stable/nn.init.html
         ###     Dropout: https://pytorch.org/docs/stable/nn.html#dropout-layers
         self.embed_to_hidden_weight = nn.Parameter(torch.empty(self.n_features * self.embed_size, self.hidden_size))
-        self.embed_to_hidden_bias = nn.init.uniform_(torch.empty(self.hidden_size))
+        self.embed_to_hidden_bias = nn.Parameter(torch.empty(1, self.hidden_size))
         nn.init.xavier_uniform_(self.embed_to_hidden_weight)
         nn.init.uniform_(self.embed_to_hidden_bias)
 
         self.dropout = nn.Dropout(p=self.dropout_prob)
 
         self.hidden_to_logits_weight = nn.Parameter(torch.empty(self.hidden_size, self.n_classes))
-        self.hidden_to_logits_bias = nn.init.uniform_(torch.empty(self.n_classes))
+        self.hidden_to_logits_bias = nn.Parameter(torch.empty(1, self.n_classes))
         nn.init.xavier_uniform_(self.hidden_to_logits_weight)
         nn.init.uniform_(self.hidden_to_logits_bias)
 
@@ -150,7 +150,11 @@ class ParserModel(nn.Module):
         ### Please see the following docs for support:
         ###     Matrix product: https://pytorch.org/docs/stable/torch.html#torch.matmul
         ###     ReLU: https://pytorch.org/docs/stable/nn.html?highlight=relu#torch.nn.functional.relu
-
+        x = self.embedding_lookup(w)
+        hidden_raw = torch.matmul(x, self.embed_to_hidden_weight) + self.embed_to_hidden_bias
+        h = F.relu(hidden_raw)
+        self.dropout(h)
+        logits = torch.matmul(h, self.hidden_to_logits_weight) + self.hidden_to_logits_bias
 
         ### END YOUR CODE
         return logits
